@@ -30,7 +30,7 @@ app.get('/',(req,res)=>{
 //register app routes........ 
 app.use('/api',authRouter);
 app.use('/api',postRouter);
-//app.use('/api',authMiddleware,userRouter);
+app.use('/api',authMiddleware,userRouter);
 //register errorhandler middleware 
 //app.use(errorHandlerMiddleware);
 //register not found middleware 

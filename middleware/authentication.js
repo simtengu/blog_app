@@ -1,11 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/User');
-const { UnAuthenticatedError} = require('../errors')
 const authenticationMiddleware = (req,res,next)=>{
 
     const authHeader = req.headers.authorization;
     if(!authHeader || !authHeader.startsWith('Bearer ')){
-        throw new UnAuthenticatedError('Authentication error..........')
+       res.status(401).json({message:"You are not authenticated...login first"})
       return;
     }
 
@@ -17,7 +16,7 @@ const authenticationMiddleware = (req,res,next)=>{
         req.user = {userId:payload.userId,name:payload.name}
         next();
     } catch (error) {
-        throw new UnAuthenticatedError('Authentication error')
+        res.status(401).json({ message: "You are not authenticated...login first" })
     }
 }
 

@@ -1,9 +1,5 @@
 const User = require('../models/User')
-const {
-   
-    NotFoundError,
-    UnAuthenticatedError
-} = require('../errors');
+
 
 //fetch all users ............................... 
 const getUsers = async (req, res) => {
@@ -30,14 +26,15 @@ const getAuthUser = async (req, res) => {
     try {
         const user = await User.findById(user_id).select('-password');
         if (!user) {
-            throw new NotFoundError('User not found');
+            res.status(404).json({message:"user not found"})
+            return;
         }
 
         res.status(200).json({ user });
 
 
     } catch (error) {
-        throw new Error("something went wrong")
+        res.status(500).json({message:"something went wrong"})
 
     }
 }

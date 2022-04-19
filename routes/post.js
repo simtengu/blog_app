@@ -2,7 +2,8 @@ const express = require('express')
 const router = express.Router();
 const multer = require('multer');
 const Post = require('../models/Post');
-const { getPosts, getUserPosts, getSinglePost, updatePost, savePost, deletePost, deleteSingleImage, updateTrending, searchPost } = require("../controllers/post");
+const { getPosts, getUserPosts, getFilteredPosts, getSinglePost, updatePost, savePost, deletePost, deleteSingleImage, updateTrending, searchPost } = require("../controllers/post");
+const authenticationMiddleware = require('../middleware/authentication');
 
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
@@ -27,8 +28,8 @@ router.post('/image/upload', upload.single('picha'), async (req, res) => {
     const post = await Post.findOne({ _id: postId })
     if (postId && post) {
 
-        const images = product.images;
-        let newImg = "http://localhost:5000/" + req.file.path;
+        const images = post.images;
+        let newImg = process.env.IMAGE_BASIC_PATH + req.file.path;
         let newImagesList = images.concat([newImg]);
 
         //updating the product(add image)............ 
@@ -42,10 +43,13 @@ router.post('/image/upload', upload.single('picha'), async (req, res) => {
 router.get("/posts", getPosts)
 router.get("/posts/filtered", getFilteredPosts)
 router.get("/posts/:userId", getUserPosts)
-router.route("/post/:postId").get(getSinglePost).patch(updatePost).delete(deletePost)
+router.route("/post/:postId")
+    .get(getSinglePost)
+    .patch(authenticationMiddleware, updatePost)
+    .delete(authenticationMiddleware, deletePost)
 router.post("/post", savePost);
-router.post("/post/image_delete/:postId",deleteSingleImage)
-router.get("/post/update_trending/:postId",updateTrending)
-router.get("/search_post",searchPost)
+router.post("/post/image_delete/:postId", deleteSingleImage)
+router.get("/post/update_trending/:postId", updateTrending)
+router.get("/search_post", searchPost)
 
 module.exports = router;
