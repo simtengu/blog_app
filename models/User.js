@@ -31,6 +31,7 @@ const userSchema = new mongoose.Schema({
         minlength: 10
 
     },
+    picture:{type: String,default:""},
     password: {
         type: String,
         required: [true, 'Please provide password'],
@@ -48,10 +49,9 @@ userSchema.pre('save', async function () {
     this.password = await bcrypt.hash(this.password, salt);
 });
 
-userSchema.pre('updateOne', async function () {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
-})
+// userSchema.pre('updateOne', async function () {
+    
+// })
 
 userSchema.methods.comparePassword = async function (candidatePassword) {
     const isMatch = await bcrypt.compare(candidatePassword, this.password);

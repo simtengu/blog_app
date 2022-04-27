@@ -17,7 +17,18 @@ const postSchema = new mongoose.Schema({
     },
     category: { type: String },
     tags: {
-        type: [String]
+        type: [String],
+        default:[]
+
+    },
+    likes: {
+        type: [],
+        default: []
+
+    },
+    comments: {
+        type: [],
+        default: []
 
     },
     monthlyViews:{

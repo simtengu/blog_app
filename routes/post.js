@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router();
 const multer = require('multer');
 const Post = require('../models/Post');
-const { getPosts, getUserPosts, getFilteredPosts, getSinglePost, updatePost, savePost, deletePost, deleteSingleImage, updateTrending, searchPost } = require("../controllers/post");
+const { getPosts, getUserPosts, getFilteredPosts, getUsers, getSinglePost, updatePost, savePost, deletePost,postComment, deleteSingleImage, updateTrending, searchPost, likePost, getTrendingPosts } = require("../controllers/post");
 const authenticationMiddleware = require('../middleware/authentication');
 
 const storage = multer.diskStorage({
@@ -14,42 +14,48 @@ const storage = multer.diskStorage({
     }
 })
 const fileFilter = function (req, file, cb) {
-    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "image/jpg") {
-        cb(null, true)
-    } else {
-        cb(new Error("file type is invalid..(use .jpg, .png or .jpeg file) "))
-    }
+    
+        if (file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "image/jpg") {
+            cb(null, true)
+        } else {
+            cb(new Error("file type is invalid..(use .jpg, .png or .jpeg file) "))
+        }
+        
+  
 
 }
 const upload = multer({ storage: storage, fileFilter: fileFilter, limits: { fileSize: 1024 * 1024 * 3 } });
 
-router.post('/image/upload', upload.single('picha'), async (req, res) => {
+router.post('/post_image/upload', upload.single('picture'), async (req, res) => {
     let { postId } = req.body;
-    const post = await Post.findOne({ _id: postId })
-    if (postId && post) {
-
+    let newImg = process.env.IMAGE_BASIC_PATH + req.file.path;
+    if (postId) {
+        let post = await Post.findOne({ _id: postId })
         const images = post.images;
-        let newImg = process.env.IMAGE_BASIC_PATH + req.file.path;
         let newImagesList = images.concat([newImg]);
 
         //updating the product(add image)............ 
         await Post.findOneAndUpdate({ _id: postId }, { images: newImagesList })
     }
 
-    res.status(200).json({ path: req.file.path });
+    res.status(200).json({ path: newImg });
 
 });
 
 router.get("/posts", getPosts)
 router.get("/posts/filtered", getFilteredPosts)
+router.get("/posts/trending", getTrendingPosts)
 router.get("/posts/:userId", getUserPosts)
 router.route("/post/:postId")
     .get(getSinglePost)
     .patch(authenticationMiddleware, updatePost)
     .delete(authenticationMiddleware, deletePost)
-router.post("/post", savePost);
-router.post("/post/image_delete/:postId", deleteSingleImage)
+router.post("/post", authenticationMiddleware,savePost);
+router.patch("/post/image_delete/:postId", deleteSingleImage)
 router.get("/post/update_trending/:postId", updateTrending)
 router.get("/search_post", searchPost)
+router.patch("/post/comment/:postId",authenticationMiddleware,postComment)
+router.patch("/post/like/:postId",authenticationMiddleware,likePost)
+router.get('/users', getUsers);
 
 module.exports = router;
