@@ -4,7 +4,7 @@ const User = require('../models/User')
 const bcrypt = require('bcryptjs');
 const multer = require('multer')
 const fs = require("fs")
-
+const cloudinary = require("../utils/cloudinary")
 
 
 
@@ -70,45 +70,15 @@ const passwordUpdate = async (req, res) => {
 
 }
 
-
-
-//image related controllers.................................... 
-//image setups.......... 
-const storage = multer.diskStorage({
-    destination: function (req, file, cb) {
-        cb(null, './uploads/');
-    },
-    filename: function (req, file, cb) {
-        cb(null, Math.round(Math.random() * 1000000) + file.originalname);
-    }
-})
-const fileFilter = function (req, file, cb) {
-
-    if (file.mimetype === "image/jpeg" || file.mimetype === "image/png" || file.mimetype === "image/jpg") {
-        cb(null, true)
-    } else {
-        cb(new Error("file type is invalid..(use .jpg, .png or .jpeg file) "))
-    }
-
-
-
-}
-const uploadProfile = multer({ storage: storage, fileFilter: fileFilter, limits: { fileSize: 1024 * 1024 * 3 } });
-
 const updateUserImage = async (req, res) => {
 
     let { userId } = req.body;
-    let newImage = process.env.IMAGE_BASIC_PATH + req.file.path;
     let user = await User.findById(userId);
     if (user.picture) {
-        let imgArray = user.picture.split('/');
-        let path = imgArray[imgArray.length - 1];
-        fs.unlink(path, (err => {
-            if (err) { throw err }
-        }))
+        await cloudinary.uploader.destroy(user.picture_id)
     }
-
-    const updatedUser = await User.findOneAndUpdate({ _id: userId }, { picture: newImage }, { new: true })
+    const rs = await cloudinary.uploader.upload(req.file.path);
+    const updatedUser = await User.findOneAndUpdate({ _id: userId }, { picture: rs.secure_url, picture_id: rs.public_id }, { new: true })
     res.status(200).json({ user: updatedUser });
 
 }
@@ -136,5 +106,5 @@ const removeUserImage = async (req, res) => {
 
 
 module.exports = {
-     updateUserDetails, getAuthUser, uploadProfile, updateUserImage, removeUserImage, passwordUpdate
+    updateUserDetails, getAuthUser, updateUserImage, removeUserImage, passwordUpdate
 }
