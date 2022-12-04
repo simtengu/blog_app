@@ -36,7 +36,7 @@ app.use('/api',authMiddleware,userRouter);
 //register not found middleware 
 app.use(notFoundMiddleware);
 
-const port = 5000;
+const port = process.env.PORT || 5000;
 const start = async ()=>{
   try {
      await connectDb(process.env.MONGO_URI);

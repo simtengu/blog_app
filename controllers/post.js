@@ -7,7 +7,7 @@ const getPosts = async (req, res) => {
     const pageNumber = page ? page : 1;
     const limit = 16;
     const skip = (page - 1) * limit;
-    const posts = await Post.find({}).populate("owner").sort('-createdAt').skip(skip).limit(limit);
+    const posts = await Post.find({}).populate("owner").sort('-createdAt');
     res.status(200).json({ posts })
 }
 
@@ -18,7 +18,7 @@ const getSinglePost = async (req, res) => {
         const post = await Post.findById(postId).populate('owner');
         const posts = await Post.find({ _id: { $ne: postId }, category: post.category }).populate('owner').sort("-createdAt").limit(5)
         if (!post) {
-            res.status(404).json({ message: error.message })
+            res.status(404).json({ message: "error.message" })
             return;
         }
         res.status(200).json({ post, relatedPosts: posts })
