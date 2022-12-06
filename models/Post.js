@@ -36,8 +36,9 @@ const postSchema = new mongoose.Schema({
         default:0
     },
     images:{
-        type:[String],
-        required:[true,'provide atleast one image for the post']
+        type:[Object],
+        required:[true,'provide atleast one image for the post'],
+        default:[]
     }
 
 }, { timestamps: true });

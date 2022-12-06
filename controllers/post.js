@@ -1,7 +1,7 @@
 const Post = require("../models/Post");
 const User = require("../models/User");
 const fs = require('fs');
-const { populate } = require("../models/Post");
+const cloudinary = require("../utils/cloudinary")
 const getPosts = async (req, res) => {
     const { page } = req.query;
     const pageNumber = page ? page : 1;
@@ -18,7 +18,7 @@ const getSinglePost = async (req, res) => {
         const post = await Post.findById(postId).populate('owner');
         const posts = await Post.find({ _id: { $ne: postId }, category: post.category }).populate('owner').sort("-createdAt").limit(5)
         if (!post) {
-            res.status(404).json({ message: "error.message" })
+            res.status(404).json({ message: error.message })
             return;
         }
         res.status(200).json({ post, relatedPosts: posts })
@@ -35,7 +35,7 @@ const getUserPosts = async (req, res) => {
 
         const user = await User.findById(userId);
         const posts = await Post.find({ owner: userId })
-        res.status(200).json({ posts,user })
+        res.status(200).json({ posts, user })
 
 
     } catch (error) {
@@ -144,18 +144,16 @@ const deletePost = async (req, res) => {
             return;
         }
         const images = post.images;
+        
         //deleting post images................
         if (images.length > 0) {
+            for (const img of images) {
 
-            images.forEach(img => {
-                let imgArray = img.split('/');
-                let path = imgArray[imgArray.length - 1];
+                await cloudinary.uploader.destroy(img.image_id)
 
-                fs.unlink(path, (err => {
-                    if (err) { res.status(500).json({ message: err.message }); return; }
-                }))
+            }
 
-            });
+
         }
         //deleting the post............ 
         await Post.findOneAndRemove({ _id: postId })
@@ -169,7 +167,7 @@ const deletePost = async (req, res) => {
 
 const deleteSingleImage = async (req, res) => {
     const { postId } = req.params;
-    const { image } = req.body;
+    const { image_id } = req.body;
     // console.log(image);
     try {
 
@@ -180,21 +178,12 @@ const deleteSingleImage = async (req, res) => {
         }
         const images = post.images;
         //deleting post image................
-        if (images.length > 0) {
+        await cloudinary.uploader.destroy(image_id)
 
-            let imgArray = image.split('/');
-            let path = imgArray[imgArray.length - 1];
-
-            fs.unlink(path, (err => {
-                if (err) { throw err }
-            }))
-
-        }
-
-        let newImagesList = images.filter(img => img !== image);
+        let newImagesList = images.filter(img => img.image_id !== image_id);
 
         //updating the product(rm deleted image)............ 
-        await Post.findOneAndUpdate({ _id: postId }, { images: newImagesList }, { returnDocument: "after" })
+        await Post.findOneAndUpdate({ _id: postId }, { images: newImagesList }, { new:true })
         res.status(200).json({ status: 'image deleted' })
 
 
@@ -205,12 +194,12 @@ const deleteSingleImage = async (req, res) => {
 }
 
 
-const getTrendingPosts = async (req,res)=>{
+const getTrendingPosts = async (req, res) => {
     try {
         const posts = await Post.find({}).populate("owner").sort("-monthlyViews").limit(5);
-         res.status(200).json({posts})
+        res.status(200).json({ posts })
     } catch (error) {
-        res.status(500).json({ message: error.message }) 
+        res.status(500).json({ message: error.message })
     }
 }
 
@@ -248,12 +237,12 @@ const searchPost = async (req, res) => {
 
 const postComment = async (req, res) => {
     const { postId } = req.params;
-    const updatedPost = await Post.findOneAndUpdate({ _id: postId }, { $push: { comments: req.body } },{new:true})
-    if(!updatedPost){
-        res.status(404).json({message:"the post was not found"})
+    const updatedPost = await Post.findOneAndUpdate({ _id: postId }, { $push: { comments: req.body } }, { new: true })
+    if (!updatedPost) {
+        res.status(404).json({ message: "the post was not found" })
     }
 
-    res.status(200).json({post:updatedPost})
+    res.status(200).json({ post: updatedPost })
 
 }
 
@@ -270,5 +259,5 @@ const likePost = async (req, res) => {
 
 module.exports = {
     getPosts, getSinglePost, updatePost, savePost, getTrendingPosts, getUsers,
-    deletePost, deleteSingleImage, updateTrending, searchPost, getUserPosts, getFilteredPosts, postComment,likePost
+    deletePost, deleteSingleImage, updateTrending, searchPost, getUserPosts, getFilteredPosts, postComment, likePost
 }
